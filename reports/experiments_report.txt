@@ -1,0 +1,121 @@
+ADRIPS experiments - 2026-11-23 23:49
+Train 3539 / Test 885 / 5-fold CV
+
+==============================================================================
+PART A - Model comparison (Graduate / Enrolled / Dropout)
+==============================================================================
+(CatBoost not installed - skipped. `pip install catboost` to include it.)
+  cross-validating Logistic Regression ...
+  cross-validating SVM (RBF kernel) ...
+  cross-validating k-Nearest Neighbors ...
+  cross-validating Neural Network (MLP) ...
+  cross-validating Extra Trees ...
+  cross-validating Random Forest (tuned) ...
+  cross-validating HistGradientBoosting ...
+  cross-validating XGBoost (tuned) ...
+  cross-validating LightGBM ...
+  cross-validating Current ADRIPS ensemble (0.4 RF + 0.6 XGB) ...
+
+  Top 3 by CV macro F1 -> soft voting: ['XGBoost (tuned)', 'LightGBM', 'Random Forest (tuned)']
+  Top 5 by CV macro F1 -> stacking:    ['XGBoost (tuned)', 'LightGBM', 'Random Forest (tuned)', 'Extra Trees', 'HistGradientBoosting']
+(CatBoost not installed - skipped. `pip install catboost` to include it.)
+  cross-validating Soft Voting (top 3) ...
+  cross-validating Stacking (top 5 + LR meta-learner) ...
+  fitting Logistic Regression on full training set ...
+  fitting SVM (RBF kernel) on full training set ...
+  fitting k-Nearest Neighbors on full training set ...
+  fitting Neural Network (MLP) on full training set ...
+  fitting Extra Trees on full training set ...
+  fitting Random Forest (tuned) on full training set ...
+  fitting HistGradientBoosting on full training set ...
+  fitting XGBoost (tuned) on full training set ...
+  fitting LightGBM on full training set ...
+  fitting Current ADRIPS ensemble (0.4 RF + 0.6 XGB) on full training set ...
+  fitting Soft Voting (top 3) on full training set ...
+  fitting Stacking (top 5 + LR meta-learner) on full training set ...
+
+Cross-validation on the training set (used for choosing):
+                                            cv_macro_f1  cv_main_std  cv_accuracy  cv_dropout_f1  cv_dropout_recall  cv_dropout_precision   seconds
+Current ADRIPS ensemble (0.4 RF + 0.6 XGB)       0.7313       0.0110       0.7725         0.7880             0.7414                0.8418    6.8309
+Soft Voting (top 3)                              0.7263       0.0117       0.7700         0.7867             0.7388                0.8421   10.0167
+XGBoost (tuned)                                  0.7260       0.0101       0.7655         0.7854             0.7317                0.8487    5.0275
+LightGBM                                         0.7245       0.0118       0.7706         0.7896             0.7423                0.8441    3.9838
+Random Forest (tuned)                            0.7234       0.0101       0.7703         0.7876             0.7485                0.8316    1.2715
+Stacking (top 5 + LR meta-learner)               0.7195       0.0107       0.7544         0.7846             0.7238                0.8578  172.8229
+Extra Trees                                      0.7158       0.0103       0.7711         0.7840             0.7423                0.8311    3.8702
+HistGradientBoosting                             0.7121       0.0187       0.7646         0.7739             0.7335                0.8197   20.3432
+Logistic Regression                              0.6876       0.0145       0.7313         0.7609             0.7150                0.8139    4.8720
+SVM (RBF kernel)                                 0.6816       0.0123       0.7474         0.7468             0.7317                0.7635   10.0611
+Neural Network (MLP)                             0.6667       0.0228       0.7542         0.7749             0.7687                0.7821    1.1554
+k-Nearest Neighbors                              0.5469       0.0118       0.6934         0.7077             0.5990                0.8655    3.3243
+
+Test set (885 students, reported once):
+                                            test_accuracy  test_macro_f1  test_dropout_f1  test_dropout_recall  test_dropout_precision
+Current ADRIPS ensemble (0.4 RF + 0.6 XGB)         0.7661         0.7336           0.8045               0.7535                  0.8629
+Soft Voting (top 3)                                0.7718         0.7362           0.8090               0.7606                  0.8640
+XGBoost (tuned)                                    0.7616         0.7295           0.8023               0.7430                  0.8719
+LightGBM                                           0.7729         0.7367           0.8015               0.7606                  0.8471
+Random Forest (tuned)                              0.7627         0.7253           0.7978               0.7500                  0.8520
+Stacking (top 5 + LR meta-learner)                 0.7525         0.7260           0.7922               0.7183                  0.8831
+Extra Trees                                        0.7650         0.7221           0.7895               0.7394                  0.8468
+HistGradientBoosting                               0.7819         0.7422           0.8074               0.7676                  0.8516
+Logistic Regression                                0.7390         0.6999           0.7788               0.7500                  0.8099
+SVM (RBF kernel)                                   0.7605         0.7053           0.7638               0.7570                  0.7706
+Neural Network (MLP)                               0.7548         0.6971           0.7764               0.7641                  0.7891
+k-Nearest Neighbors                                0.7096         0.5808           0.7280               0.6268                  0.8683
+
+McNemar test vs Current ADRIPS ensemble (0.4 RF + 0.6 XGB) (p < 0.05 = real difference):
+  Soft Voting (top 3)                      only-this-correct= 11  only-current-correct=  6  p=0.3323
+  XGBoost (tuned)                          only-this-correct= 12  only-current-correct= 16  p=0.5716
+  LightGBM                                 only-this-correct= 26  only-current-correct= 20  p=0.4614
+  Random Forest (tuned)                    only-this-correct= 18  only-current-correct= 21  p=0.7493
+  Stacking (top 5 + LR meta-learner)       only-this-correct= 13  only-current-correct= 25  p=0.0730
+  Extra Trees                              only-this-correct= 26  only-current-correct= 27  p=1.0000
+  HistGradientBoosting                     only-this-correct= 45  only-current-correct= 31  p=0.1354
+  Logistic Regression                      only-this-correct= 44  only-current-correct= 68  p=0.0293
+  SVM (RBF kernel)                         only-this-correct= 55  only-current-correct= 60  p=0.7093
+  Neural Network (MLP)                     only-this-correct= 62  only-current-correct= 72  p=0.4370
+  k-Nearest Neighbors                      only-this-correct= 86  only-current-correct=136  p=0.0010
+
+Best by CV: Current ADRIPS ensemble (0.4 RF + 0.6 XGB) (CV macro F1 0.7313, +0.0000 vs current ensemble).
+-> The gain is within one CV standard deviation: no model is meaningfully better than the current ensemble.
+
+==============================================================================
+PART B - Binary framing: Dropout vs Not dropout
+==============================================================================
+Dropout share: 32.1% of training students
+  cross-validating Logistic Regression ...
+  cross-validating Random Forest (tuned) ...
+  cross-validating XGBoost (tuned) ...
+  cross-validating Ensemble (0.4 RF + 0.6 XGB) ...
+
+Cross-validation (training set):
+                             cv_roc_auc  cv_main_std  cv_accuracy   cv_f1  cv_recall  cv_precision
+Ensemble (0.4 RF + 0.6 XGB)      0.9216       0.0085       0.8689  0.7985     0.8083        0.7892
+XGBoost (tuned)                  0.9202       0.0094       0.8661  0.7954     0.8109        0.7807
+Random Forest (tuned)            0.9176       0.0076       0.8652  0.7918     0.7977        0.7862
+Logistic Regression              0.9047       0.0121       0.8497  0.7727     0.7959        0.7509
+
+Test set at threshold 0.50:
+                             test_roc_auc  test_accuracy  test_f1  test_recall  test_precision
+Ensemble (0.4 RF + 0.6 XGB)        0.9327         0.8847   0.8241       0.8415          0.8074
+XGBoost (tuned)                    0.9320         0.8881   0.8284       0.8415          0.8157
+Random Forest (tuned)              0.9305         0.8746   0.8070       0.8169          0.7973
+Logistic Regression                0.9189         0.8599   0.7912       0.8275          0.7581
+
+Threshold for >= 85% dropout recall (chosen on training out-of-fold predictions): 0.40
+Test set at 0.40: recall 0.880, precision 0.737, F1 0.803, accuracy 0.861
+-> Flags 339 of 885 students; catches 250 of 284 actual dropouts.
+
+==============================================================================
+PART C - Early warning: predicting with less data (current ensemble)
+==============================================================================
+  End of year 1 (all data, current): 24 numeric + 17 categorical features
+  End of semester 1 (no 2nd-sem data): 14 numeric + 17 categorical features
+  At enrollment (no grades at all): 6 numeric + 17 categorical features
+                                     cv_macro_f1  cv_dropout_f1  cv_binary_roc_auc  test_macro_f1  test_dropout_f1  test_dropout_recall  test_binary_roc_auc
+End of year 1 (all data, current)         0.7313         0.7880             0.9216         0.7336           0.8045               0.7535               0.9327
+End of semester 1 (no 2nd-sem data)       0.6929         0.7549             0.9054         0.6938           0.7658               0.7254               0.9162
+At enrollment (no grades at all)          0.5754         0.6258             0.8263         0.6017           0.6452               0.5986               0.8304
+
+Total time: 7.5 min

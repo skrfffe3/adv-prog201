@@ -1,0 +1,161 @@
+ADRIPS multi-stage training - 2026-11-24 08:22
+scikit-learn 1.9.1
+Dataset: 4424 records | Dropout 1421 (32.1%) | Not dropout 3003 (Graduate 2209, Enrolled 794)
+Train 3539 / Test 885
+
+==============================================================================
+LEAKAGE AUDIT
+==============================================================================
+[1] Identical student rows in both train and test: 0  OK
+[2] Preprocessing is inside each pipeline -> re-fitted per CV fold.  OK
+[3] At enrollment        uses 22 raw inputs; future information: none  OK
+[3] After 1st semester   uses 28 raw inputs; future information: none  OK
+[3] After 1st year       uses 34 raw inputs; future information: none  OK
+[4] Single-feature check (training set): features that alone give AUC >= 0.9 would suggest a target proxy.
+      Overall_Approval_Rate                         AUC 0.893
+      Approval_Rate_2nd                             AUC 0.893
+      Failed_Units_2nd                              AUC 0.857
+      Curricular units 2nd sem (approved)           AUC 0.855
+      Approval_Rate_1st                             AUC 0.855
+      Average_Grade                                 AUC 0.835
+      No single feature is a near-perfect predictor.  OK
+[5] Training students enrolled but with 0 evaluations: 137 in 1st sem, 181 in 2nd sem.
+    These have practically already left, so stage 2/3 results are also reported for 'active' students only.
+[6] Training students with no academic record (0 enrolled units): 148 -> treated as missing + flagged, not as failing.
+[7] Note: 'Enrolled' students are labelled Not dropout, but some may still drop out later (label noise that can only lower the scores).
+[8] Note: the dataset authors cleaned it before release (records removed, outliers and missing values handled). Their cleaning cannot be audited here; real school data will be messier.
+[9] Note: Unemployment/Inflation/GDP have one value per enrollment year, so they also identify the student's cohort (2008/09-2018/19).
+
+==============================================================================
+STAGE 1 - AT ENROLLMENT
+==============================================================================
+Background, program, socio-economic and financial data known at enrollment (Realinho et al., 2022, Table 1) - no grades yet.
+Features: 6 numeric + 17 categorical
+
+Tuning (5-fold CV, roc_auc):
+  Random Forest  default 0.8190 ± 0.0081 | tuned 0.8229 ± 0.0076
+                 -> tuned kept: {'model__n_estimators': 300, 'model__min_samples_split': 5, 'model__min_samples_leaf': 1, 'model__max_features': 'log2', 'model__max_depth': 30}
+  XGBoost        default 0.8150 ± 0.0162 | tuned 0.8257 ± 0.0137
+                 -> tuned kept: {'model__subsample': 0.8, 'model__n_estimators': 500, 'model__min_child_weight': 1, 'model__max_depth': 3, 'model__learning_rate': 0.03, 'model__colsample_bytree': 0.8}
+
+Ensemble weight and thresholds (separate CV folds, training set only):
+  0.0:0.8254  0.1:0.8262  0.2:0.8270  0.3:0.8275  0.4:0.8278  0.5:0.8278  0.6:0.8276  0.7:0.8270  0.8:0.8260  0.9:0.8246  1.0:0.8227
+  -> RF weight 0.5 / XGBoost weight 0.5 (OOF AUC 0.8278)
+  -> Thresholds: Medium >= 0.48 (catch >= 70% of dropouts), High >= 0.77 (precision >= 90%)
+
+Test set (reported once):
+(recall/precision/F1/accuracy at the Medium threshold 0.48)
+                                roc_auc  recall  precision      f1  accuracy
+Logistic Regression (baseline)   0.7938  0.7113     0.5706  0.6332    0.7356
+Random Forest (tuned)            0.8022  0.6549     0.6059  0.6294    0.7525
+XGBoost (tuned)                  0.8210  0.7289     0.5881  0.6509    0.7492
+Ensemble (0.5/0.5)               0.8168  0.7007     0.6030  0.6482    0.7559
+
+Ensemble flags 330 of 885 students (Medium + High) and catches 199 of 284 actual dropouts.
+
+Risk levels - all test students:
+             Students  Actual_Dropouts  Dropout_Rate
+Risk_Level                                          
+Low Risk          555               85         0.153
+Medium Risk       217              101         0.465
+High Risk         113               98         0.867
+
+==============================================================================
+STAGE 2 - AFTER 1ST SEMESTER
+==============================================================================
+Adds 1st-semester academic results.
+Features: 15 numeric + 17 categorical
+
+Tuning (5-fold CV, roc_auc):
+  Random Forest  default 0.9036 ± 0.0109 | tuned 0.9056 ± 0.0096
+                 -> tuned kept: {'model__n_estimators': 500, 'model__min_samples_split': 5, 'model__min_samples_leaf': 2, 'model__max_features': 'sqrt', 'model__max_depth': None}
+  XGBoost        default 0.9016 ± 0.0162 | tuned 0.9058 ± 0.0151
+                 -> tuned kept: {'model__subsample': 0.8, 'model__n_estimators': 500, 'model__min_child_weight': 1, 'model__max_depth': 3, 'model__learning_rate': 0.03, 'model__colsample_bytree': 0.8}
+
+Ensemble weight and thresholds (separate CV folds, training set only):
+  0.0:0.9061  0.1:0.9066  0.2:0.9069  0.3:0.9071  0.4:0.9071  0.5:0.9069  0.6:0.9067  0.7:0.9064  0.8:0.9059  0.9:0.9052  1.0:0.9043
+  -> RF weight 0.4 / XGBoost weight 0.6 (OOF AUC 0.9071)
+  -> Thresholds: Medium >= 0.37 (catch >= 85% of dropouts), High >= 0.75 (precision >= 90%)
+
+Test set (reported once):
+(recall/precision/F1/accuracy at the Medium threshold 0.37)
+                                roc_auc  recall  precision      f1  accuracy
+Logistic Regression (baseline)   0.8873  0.8451     0.6434  0.7306    0.8000
+Random Forest (tuned)            0.9020  0.8415     0.6459  0.7309    0.8011
+XGBoost (tuned)                  0.9045  0.8521     0.6436  0.7333    0.8011
+Ensemble (0.4/0.6)               0.9059  0.8556     0.6568  0.7431    0.8102
+
+Ensemble flags 370 of 885 students (Medium + High) and catches 243 of 284 actual dropouts.
+
+Risk levels - all test students:
+             Students  Actual_Dropouts  Dropout_Rate
+Risk_Level                                          
+Low Risk          515               41         0.080
+Medium Risk       181               74         0.409
+High Risk         189              169         0.894
+
+Active students only (821 took >= 1 evaluation in the latest semester; 64 excluded):
+  AUC 0.8963 | recall 0.828 | precision 0.638 | catches 197 of 238 dropouts
+             Students  Actual_Dropouts  Dropout_Rate
+Risk_Level                                          
+Low Risk          512               41         0.080
+Medium Risk       158               65         0.411
+High Risk         151              132         0.874
+
+==============================================================================
+STAGE 3 - AFTER 1ST YEAR
+==============================================================================
+Adds 2nd-semester results (most accurate, but latest).
+Features: 26 numeric + 17 categorical
+
+Tuning (5-fold CV, roc_auc):
+  Random Forest  default 0.9235 ± 0.0102 | tuned 0.9241 ± 0.0094
+                 -> tuned kept: {'model__n_estimators': 200, 'model__min_samples_split': 5, 'model__min_samples_leaf': 1, 'model__max_features': 'sqrt', 'model__max_depth': 30}
+  XGBoost        default 0.9164 ± 0.0146 | tuned 0.9244 ± 0.0115
+                 -> tuned kept: {'model__subsample': 0.8, 'model__n_estimators': 200, 'model__min_child_weight': 1, 'model__max_depth': 3, 'model__learning_rate': 0.05, 'model__colsample_bytree': 0.6}
+
+Ensemble weight and thresholds (separate CV folds, training set only):
+  0.0:0.9254  0.1:0.9257  0.2:0.9259  0.3:0.9259  0.4:0.9258  0.5:0.9256  0.6:0.9252  0.7:0.9247  0.8:0.9240  0.9:0.9232  1.0:0.9224
+  -> RF weight 0.3 / XGBoost weight 0.7 (OOF AUC 0.9259)
+  -> Thresholds: Medium >= 0.41 (catch >= 85% of dropouts), High >= 0.72 (precision >= 90%)
+
+Test set (reported once):
+(recall/precision/F1/accuracy at the Medium threshold 0.41)
+                                roc_auc  recall  precision      f1  accuracy
+Logistic Regression (baseline)   0.8986  0.8310     0.6901  0.7540    0.8260
+Random Forest (tuned)            0.9175  0.8451     0.7524  0.7960    0.8610
+XGBoost (tuned)                  0.9139  0.8486     0.6905  0.7615    0.8294
+Ensemble (0.3/0.7)               0.9164  0.8486     0.7026  0.7687    0.8362
+
+Ensemble flags 343 of 885 students (Medium + High) and catches 241 of 284 actual dropouts.
+
+Risk levels - all test students:
+             Students  Actual_Dropouts  Dropout_Rate
+Risk_Level                                          
+Low Risk          542               43         0.079
+Medium Risk       116               44         0.379
+High Risk         227              197         0.868
+
+Active students only (813 took >= 1 evaluation in the latest semester; 72 excluded):
+  AUC 0.9051 | recall 0.817 | precision 0.676 | catches 188 of 230 dropouts
+             Students  Actual_Dropouts  Dropout_Rate
+Risk_Level                                          
+Low Risk          535               42         0.079
+Medium Risk        97               36         0.371
+High Risk         181              152         0.840
+
+Sensitivity check, Stage 1 (Random Forest, CV AUC): with financial status 0.8190 | without it 0.7558 (-0.0632).
+Financial status is included at enrollment because Realinho et al. (2022) group it with socio-economic data known at enrollment.
+
+==============================================================================
+SUMMARY - one dropout model per stage (test set)
+==============================================================================
+                       AUC  Recall  Precision  Flagged   Caught  AUC (active only) Medium/High
+Stage                                                                                         
+At enrollment       0.8168  0.7007     0.6030      330  199/284                NaN   0.48/0.77
+After 1st semester  0.9059  0.8556     0.6568      370  243/284           0.896335   0.37/0.75
+After 1st year      0.9164  0.8486     0.7026      343  241/284           0.905064   0.41/0.72
+
+Saved model bundle -> models\adrips_model.joblib
+Info: {"trained_at": "2026-11-24T08:26", "sklearn_version": "1.9.1", "quick_mode": false, "scoring": "roc_auc", "target_recall": {"enrollment": 0.7, "semester1": 0.85, "year1": 0.85}, "high_precision": 0.9, "n_train": 3539, "n_test": 885}
+Total time: 3.6 min
